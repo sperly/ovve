@@ -3,6 +3,20 @@
 #include <OctoWS2811.h>
 #include <NRF24.h>
 #include <SPI.h>
+#include <EEPROM.h>
+//#include <TimerOne.h>
+#include "common.h"
+
+/* Data in EEPROM:
+
+  Byte      Data
+  0      Default mode
+  1-2    Change time in ms (colorwheel, sparkle etc)
+  3      Solidcolor, red
+  4      Solidcolor, green
+  5      Solidcolor, blue
+  
+  */
 
 //Defines
 #define STRIPS              5
@@ -15,6 +29,9 @@
 
 //Global variables for EQ
 int audio_data[7]; // store band values in these arrays
+volatile data config_data;
+
+IntervalTimer lcdUpdateTimer;
 
 //Global variables for LEDs
 const int ledsPerStrip = 16;
@@ -29,6 +46,12 @@ OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config);
 
 void setup() {
   Serial.begin(9600);  //Anything goes, USB! :P
+  
+  readDefaults();
+  
+  lcdUpdateTimer.begin(UpdateLEDS, 40000);
+  //Timer1.initialize(400000);
+  //Timer1.attachInterrupt(UpdateLED); 
   
   //Set up LEDs
   Serial.println("LED: Init... ");
@@ -51,33 +74,55 @@ void setup() {
     Serial.println("NRF24: setChannel failed");
   if (!nrf24.setThisAddress((uint8_t*)"serv1", 5))
     Serial.println("NRF24: setThisAddress failed");
-  if (!nrf24.setPayloadSize(3*sizeof(uint8_t)))
+  if (!nrf24.setPayloadSize(NRF_PACKET_SIZE*sizeof(uint8_t)))
     Serial.println("NRF24: setPayloadSize failed");
   if (!nrf24.setRF(NRF24::NRF24DataRate2Mbps, NRF24::NRF24TransmitPower0dBm))
     Serial.println("NRF24: setRF failed");    
   Serial.println("NRF24: Initialised!");
 }
 
-#define RED    0xFF0000
-#define GREEN  0x00FF00
-#define BLUE   0x0000FF
-#define YELLOW 0xFFFF00
-#define PINK   0xFF1088
-#define ORANGE 0xE05800
-#define WHITE  0xFFFFFF
+void readDefaults(){
+  int address = 0;
+  
+  config_data.mode = (uint8_t)EEPROM.read(address++);
+  config_data.changetime = ((uint8_t)EEPROM.read(address++)) << 8;
+  config_data.changetime |= (uint8_t)EEPROM.read(address++);
+  config_data.color.red = (uint8_t)EEPROM.read(address++);
+  config_data.color.green = (uint8_t)EEPROM.read(address++);
+  config_data.color.blue = (uint8_t)EEPROM.read(address++);
+  config_data.eq_thres = ((uint8_t)EEPROM.read(address++)) << 8;
+  config_data.eq_thres |= (uint8_t)EEPROM.read(address++);
+}
+
+void writeDefaults(){
+  int address = 0;
+  EEPROM.write(address++, (byte)config_data.mode); 
+  EEPROM.write(address++, (byte)(config_data.changetime >> 8)); 
+  EEPROM.write(address++, (byte)(config_data.changetime & 0xFF)); 
+  EEPROM.write(address++, (byte)config_data.color.red); 
+  EEPROM.write(address++, (byte)config_data.color.green); 
+  EEPROM.write(address++, (byte)config_data.color.blue);
+  EEPROM.write(address++, (byte)(config_data.eq_thres >> 8)); 
+  EEPROM.write(address++, (byte)(config_data.eq_thres & 0xFF));
+}
+
+void UpdateLEDS()
+{
+  leds.show(); 
+}
 
 void loop() {
   uint8_t r8, g8, b8;
   
-  //Serial.println("EQ: Reading...");
+  Serial.println("EQ: Reading...");
   readMSGEQ7(audio_data);
   for(int i=0;i<7;i++)
   {
-    //Serial.print("B");
-    //Serial.print(i+1);
-   //Serial.print(": ");
-   Serial.print(audio_data[i]);
-   Serial.print(";"); 
+    Serial.print("B");
+    Serial.print(i+1);
+    Serial.print(": ");
+    Serial.print(audio_data[i]);
+    Serial.print(";"); 
   }
   Serial.println("");
   
@@ -133,11 +178,11 @@ void readMSGEQ7(int *audio_data)
   int band;
   digitalWrite(PIN_EQ_RESET, HIGH);
   digitalWrite(PIN_EQ_RESET, LOW);
-  for(band=0; band <7; band++)
+  for(band=0; band < 7; band++)
   {
     digitalWrite(PIN_EQ_STROBE,LOW);   // strobe pin - kicks the IC up to the next band 
     delayMicroseconds(30);             // Wait for MSGEQ to set output level
-    audio_data[band] = analogRead(A7);  // store band reading
+    audio_data[band] = analogRead(PIN_EQ_SIGNAL);  // store band reading
     digitalWrite(PIN_EQ_STROBE,HIGH); 
   }
 }

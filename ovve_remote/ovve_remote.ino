@@ -1,37 +1,54 @@
 #include <i2c_t3.h>
-#include "TCS34725_T3.h"
+#include <TCS34725.h>
 #include <NRF24.h>
 #include <SPI.h>
 #include <Bounce.h>
 #include <DogLcd.h>
+#include <Encoder.h>
+#include <EEPROM.h>
+#include <MenuSystem.h>
+#include "globals.h"
 
-//defines
-#define PIN_NRF_CS          9
-#define PIN_NRF_CSE         10
-#define PIN_SCAN_BUTTON     5
-#define PIN_LCD_SI          0
-#define PIN_LCD_CLK         3
-#define PIN_LCD_RS          1
-#define PIN_LCD_CSB         2
-#define PIN_LCD_RESET       -1
-#define PIN_LCD_BACK        4
+//Set LCD backlight PWM 
+//    myDisplay.setBacklight(0,true);  //Off
+//    myDisplay.setBacklight(128,true); //Medium on  
 
-//Global variables
-uint8_t gammatable[256];
+void MenuSetup(){
+  mnuSettings.add_menu(&mnuMode);
+  mnuMode.add_item(&mitModeColorWheel, &selModeColorWheel);
+  mnuMode.add_item(&mitModeSparkle, &selModeSparkle);
+  mnuMode.add_item(&mitModeBassTrigger, &selModeBassTrigger);
+  ms.set_root_menu(&mnuSettings);
+}
 
-//Class instantiations
-TCS34725_T3 tcs = TCS34725_T3(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
-NRF24 nrf24(PIN_NRF_CS,PIN_NRF_CSE);
-Bounce bouncer = Bounce(PIN_SCAN_BUTTON,5);
-DogLcd lcd(PIN_LCD_SI, PIN_LCD_CLK, PIN_LCD_RS, PIN_LCD_CSB, PIN_LCD_RESET, PIN_LCD_BACK);
+void selModeColorWheel(MenuItem* p_menu_item){
+  
+}
+void selModeSparkle(MenuItem* p_menu_item){
+  
+}
+void selModeBassTrigger(MenuItem* p_menu_item){
+  
+}
+void selModeColorWheel(){
+  
+}
+
 
 void setup() {
   Serial.begin(9600);
+
+  readConfig();  
+  MenuSetup();
   
   //Start 3-line, normal contrast, 3.3v
-  lcd.begin(DOG_LCD_M163, 0x28, DOG_LCD_VCC_3V3);
-  lcd.print("Init Ovve...");
+  lcd.begin(DOG_LCD_M163, LCD_CONTRAST, DOG_LCD_VCC_3V3);
+  LightLCD();
+  
+  lcd.setContrast(config_data.lcdContrast);
 
+  lcd.setCursor(0, 0);
+  lcd.print("Init Ovve...");
   lcd.setCursor(0, 1);
   lcd.print("Color sensor...");
   if (tcs.begin()) {
@@ -44,8 +61,8 @@ void setup() {
     lcd.print("Failed! Halting!");
     while (1); // halt!
   }
-  tcs.setGain(TCS34725_GAIN_4X);
-  
+  tcs.setGain(TCS34725_GAIN_16X);
+  delay(100);
   lcd.setCursor(0, 1);
   lcd.print("Wireless...");
   if (nrf24.init())
@@ -58,6 +75,7 @@ void setup() {
     lcd.print("Failed! Halting!");
     Serial.println("NRF24 init failed");
   }
+  delay(100);
   if (nrf24.setChannel(2))
   {
     lcd.setCursor(0, 2);
@@ -69,6 +87,7 @@ void setup() {
     lcd.print("Failed! Halting!");
     Serial.println("setChannel failed");
   }
+  delay(100);
   if (nrf24.setThisAddress((uint8_t*)"clie1", 5))
   {
     lcd.setCursor(0, 2);
@@ -80,10 +99,13 @@ void setup() {
     lcd.print("Failed! Halting!");
     Serial.println("setThisAddress failed");
   }
-  if (nrf24.setPayloadSize(3*sizeof(uint8_t)))
+  delay(100);
+  if (nrf24.setPayloadSize(NRF_PACKET_SIZE*sizeof(uint8_t)))
   {
     lcd.setCursor(0, 2);
-    lcd.print("blocksize 3bytes");
+    lcd.print("payload: ");
+    lcd.print(NRF_PACKET_SIZE,DEC);
+    lcd.print("b");
   }
   else
   {
@@ -91,6 +113,7 @@ void setup() {
     lcd.print("Failed! Halting!");
     Serial.println("setPayloadSize failed");
   }
+  delay(100);
   if (nrf24.setRF(NRF24::NRF24DataRate2Mbps, NRF24::NRF24TransmitPower0dBm))
   {
     lcd.setCursor(0, 2);
@@ -102,8 +125,8 @@ void setup() {
     lcd.print("Failed! Halting!");
     Serial.println("setRF failed");    
   }
+  delay(100);
   Serial.println("initialised");
-  
   
   // thanks PhilB for this gamma table!
   // it helps convert RGB colors to what humans see
@@ -116,27 +139,94 @@ void setup() {
     gammatable[i] = (uint8_t)x;      
   }
   
-  //Setup pins
+  //Set up Timer for checking colorread every 10ms
+  CheckColorTimer.begin(CheckColor, 10000);
+  
+  //Setup bouncer pins
   pinMode(PIN_SCAN_BUTTON,INPUT);
+  pinMode(PIN_ENC_BUTTON,INPUT);
   
-  
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
   lcd.setCursor(0, 0);
   lcd.print("***** OVVE *****");
-  lcd.setCursor(0, 2);
-  lcd.print("                ");
-
+  ClearLCD();
+  timeLast = millis();
 }
 
+void readConfig(){
+  int address = 0;
+  config_data.mode = (uint8_t)EEPROM.read(address++);
+  config_data.changetime = ((uint8_t)EEPROM.read(address++)) << 8;
+  config_data.changetime |= (uint8_t)EEPROM.read(address++);
+  config_data.color.red = (uint8_t)EEPROM.read(address++);
+  config_data.color.green = (uint8_t)EEPROM.read(address++);
+  config_data.color.blue = (uint8_t)EEPROM.read(address++);
+  config_data.eq_thres = ((uint8_t)EEPROM.read(address++)) << 8;
+  config_data.eq_thres |= (uint8_t)EEPROM.read(address++);
+  config_data.lcdBacklight = (uint8_t)EEPROM.read(address++);
+  config_data.lcdBacklightTime = (uint8_t)EEPROM.read(address++);
+  config_data.lcdContrast = (uint8_t)EEPROM.read(address++);
+}
+
+void writeConfig(){
+  int address = 0;
+  EEPROM.write(address++, (byte)config_data.mode); 
+  EEPROM.write(address++, (byte)(config_data.changetime >> 8)); 
+  EEPROM.write(address++, (byte)(config_data.changetime & 0xFF)); 
+  EEPROM.write(address++, (byte)config_data.color.red); 
+  EEPROM.write(address++, (byte)config_data.color.green); 
+  EEPROM.write(address++, (byte)config_data.color.blue);
+  EEPROM.write(address++, (byte)(config_data.eq_thres >> 8)); 
+  EEPROM.write(address++, (byte)(config_data.eq_thres & 0xFF));
+  EEPROM.write(address++, (byte)config_data.lcdBacklight);
+  EEPROM.write(address++, (byte)config_data.lcdBacklightTime);
+  EEPROM.write(address++, (byte)config_data.lcdContrast);
+}
+
+void ClearLCD(){
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
+  lcd.setCursor(0, 2);
+  lcd.print("                ");
+}
 
 void loop() {
   uint8_t col[3];
+  boolean butPressed = false;
   
-  bouncer.update ();
-  int value = bouncer.read();
-  if(value == HIGH)
+  if(millis() - timeLast > config_data.lcdBacklightTime)
+    lcd.setBacklight(0, true);
+  
+  butBounce.update();
+  if(butBounce.risingEdge()) butPressed = true;
+  if(butPressed == true) {
+    LightLCD();
+  }
+  //if(butBounce.fallingEdge()) butPressed = false;
+  if((butBounce.duration() > 2000) && (butPressed == true))
   {
+     ActivateMenu();
+  }
+}
+
+void LightLCD()
+{
+  lcd.setBacklight(config_data.lcdBacklight, true);
+  timeLast = millis(); 
+}
+
+void ActivateMenu() {
+  
+  
+}
+
+void CheckColor()
+{
+  uint8_t col[3];
+  
+  boolean scanBounceChanged = scanBounce.update ();
+  if(scanBounce.read() && scanBounceChanged)
+  {
+    LightLCD();
     lcd.setCursor(0, 1);
     lcd.print("Color reading: ");
     GetColor(col);
@@ -166,8 +256,6 @@ void loop() {
   }
 }
 
-
-
 void GetColor(uint8_t* color)
 {
   uint16_t clear, red, green, blue;
@@ -178,21 +266,15 @@ void GetColor(uint8_t* color)
   tcs.setInterrupt(true);  // turn off LED
   
   // Figure out some basic hex code for visualization
-  uint32_t sum = red;
-  sum += green;
-  sum += blue;
-  sum += clear;
   float r, g, b;
-  r = red; r /= sum;
-  g = green; g /= sum;
-  b = blue; b /= sum;
-  r *= 256; g *= 256; b *= 256;
+  r = red/84.1; 
+  g = green/84.1;
+  b = blue/84.1;
+
   Serial.print("\t");
   Serial.print((int)r, HEX); Serial.print((int)g, HEX); Serial.print((int)b, HEX);
   Serial.println();
   
   color[0] = gammatable[(uint8_t)r]; color[1] = gammatable[(uint8_t)g]; color[2] = gammatable[(uint8_t)b];
-
-
 }
 
