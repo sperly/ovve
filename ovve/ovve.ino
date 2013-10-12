@@ -1,57 +1,16 @@
 //#include <i2c_t3.h>
-//#include <TCS34725.h>
 #include <OctoWS2811.h>
 #include <NRF24.h>
 #include <SPI.h>
 #include <EEPROM.h>
-//#include <TimerOne.h>
 #include "common.h"
-
-/* Data in EEPROM:
-
-  Byte      Data
-  0      Default mode
-  1-2    Change time in ms (colorwheel, sparkle etc)
-  3      Solidcolor, red
-  4      Solidcolor, green
-  5      Solidcolor, blue
-  
-  */
-
-//Defines
-#define STRIPS              5
-#define LONGEST_STRIP       24
-#define PIN_EQ_STROBE       23
-#define PIN_EQ_RESET        22
-#define PIN_EQ_SIGNAL       A7
-#define PIN_NRF_CS          9
-#define PIN_NRF_CSE         10
-
-//Global variables for EQ
-int audio_data[7]; // store band values in these arrays
-volatile data config_data;
-
-IntervalTimer lcdUpdateTimer;
-
-//Global variables for LEDs
-const int ledsPerStrip = 16;
-const int ledsInStrips[5] = {20,20,24,24,16};
-DMAMEM int displayMemory[ledsPerStrip*6];
-int drawingMemory[ledsPerStrip*6];
-const int config = WS2811_GRB | WS2811_800kHz;
-
-//Instansiate classes
-NRF24 nrf24(PIN_NRF_CS,PIN_NRF_CSE);
-OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config);
 
 void setup() {
   Serial.begin(9600);  //Anything goes, USB! :P
   
-  readDefaults();
+  readConfig();
   
   lcdUpdateTimer.begin(UpdateLEDS, 40000);
-  //Timer1.initialize(400000);
-  //Timer1.attachInterrupt(UpdateLED); 
   
   //Set up LEDs
   Serial.println("LED: Init... ");
@@ -81,9 +40,9 @@ void setup() {
   Serial.println("NRF24: Initialised!");
 }
 
-void readDefaults(){
+void readConfig(){
   int address = 0;
-  
+  Serial.println("Reading EEPOROM config");
   config_data.mode = (uint8_t)EEPROM.read(address++);
   config_data.changetime = ((uint8_t)EEPROM.read(address++)) << 8;
   config_data.changetime |= (uint8_t)EEPROM.read(address++);
@@ -94,8 +53,9 @@ void readDefaults(){
   config_data.eq_thres |= (uint8_t)EEPROM.read(address++);
 }
 
-void writeDefaults(){
+void writeConfig(){
   int address = 0;
+  Serial.println("Writing EEPOROM config");
   EEPROM.write(address++, (byte)config_data.mode); 
   EEPROM.write(address++, (byte)(config_data.changetime >> 8)); 
   EEPROM.write(address++, (byte)(config_data.changetime & 0xFF)); 
@@ -104,6 +64,16 @@ void writeDefaults(){
   EEPROM.write(address++, (byte)config_data.color.blue);
   EEPROM.write(address++, (byte)(config_data.eq_thres >> 8)); 
   EEPROM.write(address++, (byte)(config_data.eq_thres & 0xFF));
+}
+
+void defaultConfig()
+{
+  config_data.mode = 0;
+  config_data.changetime = 100;
+  config_data.color.red = 0xAA;
+  config_data.color.green = 0xAA;
+  config_data.color.blue = 0xAA;
+  config_data.eq_thres = 550;
 }
 
 void UpdateLEDS()
