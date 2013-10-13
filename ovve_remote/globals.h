@@ -1,7 +1,7 @@
 //defines
 #define PIN_NRF_CS          9
 #define PIN_NRF_CSE         10
-#define PIN_SCAN_BUTTON     5
+#define PIN_SCAN_BUTTON     14
 #define PIN_LCD_SI          0
 #define PIN_LCD_CLK         3
 #define PIN_LCD_RS          1
@@ -10,7 +10,7 @@
 #define PIN_LCD_BACK        6
 #define PIN_ENC_A           22
 #define PIN_ENC_B           23
-#define PIN_ENC_BUTTON      15
+#define PIN_ENC_BUTTON      21
 
 #define NRF_PACKET_SIZE     8
 #define LCD_CONTRAST        0x28
