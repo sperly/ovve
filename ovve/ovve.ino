@@ -10,7 +10,7 @@ void setup() {
   
   readConfig();
   
-  lcdUpdateTimer.begin(UpdateLEDS, 40000);
+  //lcdUpdateTimer.begin(UpdateLEDS, 40000);
   
   //Set up LEDs
   Serial.println("LED: Init... ");
@@ -33,7 +33,7 @@ void setup() {
     Serial.println("NRF24: setChannel failed");
   if (!nrf24.setThisAddress((uint8_t*)"serv1", 5))
     Serial.println("NRF24: setThisAddress failed");
-  if (!nrf24.setPayloadSize(NRF_PACKET_SIZE*sizeof(uint8_t)))
+  if (!nrf24.setPayloadSize(3*sizeof(uint8_t)))
     Serial.println("NRF24: setPayloadSize failed");
   if (!nrf24.setRF(NRF24::NRF24DataRate2Mbps, NRF24::NRF24TransmitPower0dBm))
     Serial.println("NRF24: setRF failed");    
@@ -78,13 +78,19 @@ void defaultConfig()
 
 void UpdateLEDS()
 {
+  Serial.println("+");
   leds.show(); 
 }
 
 void loop() {
   uint8_t r8, g8, b8;
+  uint8_t data[3];
   
-  Serial.println("EQ: Reading...");
+  //data[0] = 0x00;
+  //data[1] = 0x00;
+  //data[2] = 0xFF;
+  
+  /*Serial.println("EQ: Reading...");
   readMSGEQ7(audio_data);
   for(int i=0;i<7;i++)
   {
@@ -94,20 +100,29 @@ void loop() {
     Serial.print(audio_data[i]);
     Serial.print(";"); 
   }
-  Serial.println("");
+  Serial.println("");*/
   
-  //Serial.println("NRF: ");
-  //nrf24.waitAvailable();
+  Serial.println("NRF: ");
+  nrf24.waitAvailableTimeout(10);
   // ping_client sends us an unsigned long containing its timestamp
-  //uint8_t data[3];
-  //uint8_t len = sizeof(data);
-  //if (!nrf24.recv((uint8_t*)&data, &len))
-  //  Serial.println("read failed");
-  //else 
-  //{
-  //  Serial.print(data[0], HEX);
-  //  Serial.print(data[1], HEX);
-  //  Serial.print(data[2], HEX);
+  
+  uint8_t len = sizeof(data);
+  if (!nrf24.recv((uint8_t*)&data, &len))
+    Serial.println("read failed");
+  else 
+  {
+    Serial.print(data[0], HEX);
+    Serial.print(data[1], HEX);
+    Serial.print(data[2], HEX);
+    int i = 0;  
+  //Serial.print((int)r8, HEX); Serial.print((int)g8, HEX); Serial.print((int)b8, HEX);
+  Serial.println(" ");
+  for(i = 0; i< 120;i++)
+  {
+      leds.setPixel(i, data[0], data[1],data[2]);
+  }
+  leds.show();
+  }
   //nrf24.waitAvailable();
   // ping_client sends us an unsigned long containing its timestamp
   //uint8_t data[3];
@@ -123,14 +138,14 @@ void loop() {
 //  r8 = (uint8_t)(red/256);
 //  g8 = (uint8_t)(green/256);
 //  b8 = (uint8_t)(blue/256);
-//  int i = 0;  
-//  Serial.print((int)r8, HEX); Serial.print((int)g8, HEX); Serial.print((int)b8, HEX);
-//  Serial.println(" ");
-//  for(i = 0; i< 21;i++)
-//  {
-//      leds.setPixel(i, gammatable[r8]*3, gammatable[g8]*3,gammatable[b8]*3);
-//  }
-  leds.show();
+ /*int i = 0;  
+  //Serial.print((int)r8, HEX); Serial.print((int)g8, HEX); Serial.print((int)b8, HEX);
+  Serial.println(" ");
+  for(i = 0; i< 120;i++)
+  {
+      leds.setPixel(i, data[0], data[1],data[2]);
+  }
+  leds.show();*/
 }
 
 //void colorWipe(int color, int wait)

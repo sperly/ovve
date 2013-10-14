@@ -127,7 +127,7 @@ void setup() {
     Serial.println("setThisAddress failed");
   }
   delay(100);
-  if (nrf24.setPayloadSize(NRF_PACKET_SIZE*sizeof(uint8_t)))
+  if (nrf24.setPayloadSize(3n*sizeof(uint8_t)))
   {
     lcd.setCursor(0, 2);
     lcd.print("payload: ");
@@ -332,13 +332,13 @@ void CheckColor()
     lcd.setCursor(13, 2);
     lcd.print(col[2], HEX);
 
-    //if (!nrf24.setTransmitAddress((uint8_t*)"serv1", 5))
-    //  Serial.println("setTransmitAddress failed");
-    //if (!nrf24.send((uint8_t*)&col, (3*sizeof(uint8_t))))
-    //    Serial.println("send failed");  
-    // if (!nrf24.waitPacketSent())
-    //    Serial.println("waitPacketSent failed"); 
-    // Serial.println("Color Sent");
+    if (!nrf24.setTransmitAddress((uint8_t*)"serv1", 5))
+      Serial.println("setTransmitAddress failed");
+    if (!nrf24.send((uint8_t*)&col, (3*sizeof(uint8_t))))
+        Serial.println("send failed");  
+     if (!nrf24.waitPacketSent())
+        Serial.println("waitPacketSent failed"); 
+     Serial.println("Color Sent");
     readingProgress = false;
     lastAction = 0;
   }

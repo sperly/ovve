@@ -27,6 +27,7 @@ void HandleMess(byte* data, int data_len){
       case MESS_SET_MODE:
         config_data.mode == data[2];
         break;
+      case
       default:
         break;
     }
