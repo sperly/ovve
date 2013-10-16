@@ -69,11 +69,24 @@ void writeConfig(){
 void defaultConfig()
 {
   config_data.mode = 0;
-  config_data.changetime = 100;
-  config_data.color.red = 0xAA;
+  config_data.ingle_color.red = 0xAA;
   config_data.color.green = 0xAA;
   config_data.color.blue = 0xAA;
   config_data.eq_thres = 550;
+  
+  config_data.sparkle.intensity = 0xFF;
+  config_data.sparkle.color.red = 0xFF;
+  config_data.sparkle.color.green = 0xFF;
+  config_data.sparkle.color.blue = 0xFF;
+  config_data.sparkle.rate = 10;
+  config_data.sparkle.change_rate = 100;
+  
+  config_data.colorwheel.change_rate = 100;
+  config_data.colorwheel.step_size = 1;
+  config_data.colorwheel.intensity = 0xFF;
+  
+  config_data.eq[7];
+  config_data.eq_thres;
 }
 
 void UpdateLEDS()
@@ -84,7 +97,7 @@ void UpdateLEDS()
 
 void loop() {
   uint8_t r8, g8, b8;
-  uint8_t data[3];
+  uint8_t data[128];
   
   //data[0] = 0x00;
   //data[1] = 0x00;
@@ -103,26 +116,29 @@ void loop() {
   Serial.println("");*/
   
   Serial.println("NRF: ");
-  nrf24.waitAvailableTimeout(10);
-  // ping_client sends us an unsigned long containing its timestamp
-  
-  uint8_t len = sizeof(data);
-  if (!nrf24.recv((uint8_t*)&data, &len))
-    Serial.println("read failed");
-  else 
-  {
-    Serial.print(data[0], HEX);
-    Serial.print(data[1], HEX);
-    Serial.print(data[2], HEX);
-    int i = 0;  
-  //Serial.print((int)r8, HEX); Serial.print((int)g8, HEX); Serial.print((int)b8, HEX);
-  Serial.println(" ");
-  for(i = 0; i< 120;i++)
-  {
-      leds.setPixel(i, data[0], data[1],data[2]);
+  if(nrf24.available()){
+    // ping_client sends us an unsigned long containing its timestamp
+    
+    uint8_t len = sizeof(data);
+    if (!nrf24.recv((uint8_t*)&data, &len))
+      Serial.println("read failed");
+    else 
+    {
+      HandleMess(data, len);
+      //Serial.print(data[0], HEX);
+      //Serial.print(data[1], HEX);
+      //Serial.print(data[2], HEX);
+      //int i = 0;  
+      //Serial.print((int)r8, HEX); Serial.print((int)g8, HEX); Serial.print((int)b8, HEX);
+      //Serial.println(" ");
+      //for(i = 0; i< 185;i++)
+      //{
+      //  leds.setPixel(i, data[0], data[1],data[2]);
+      //}
+      //leds.show();
+    }
   }
   leds.show();
-  }
   //nrf24.waitAvailable();
   // ping_client sends us an unsigned long containing its timestamp
   //uint8_t data[3];

@@ -8,8 +8,8 @@
 #define PIN_LCD_CSB         2
 #define PIN_LCD_RESET       -1
 #define PIN_LCD_BACK        6
-#define PIN_ENC_A           23
-#define PIN_ENC_B           22
+#define PIN_ENC_A           22
+#define PIN_ENC_B           23
 #define PIN_ENC_BUTTON      21
 
 #define NRF_PACKET_SIZE     8

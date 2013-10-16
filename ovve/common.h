@@ -1,6 +1,6 @@
 //Defines
 #define STRIPS              5
-#define LONGEST_STRIP       24
+#define LONGEST_STRIP       23
 #define PIN_EQ_STROBE       23
 #define PIN_EQ_RESET        22
 #define PIN_EQ_SIGNAL       A7
@@ -26,11 +26,26 @@ typedef struct {
 	uint16_t b7;
 } eq_data;
 
+typedef struct{
+  uint32_t change_rate;
+  uint8_t step_size;
+  uint8_t intensity;
+}colorwheel_data;
+
 typedef struct {
+  uint8_t intensity;
+  rgbc color;
+  uint32_t rate;
+  uint32_t change_rate;
+}sparkle_data;
+
+typedef struct {
+        rgbc single_color;
+        rgbc chamelion_color;
 	uint8_t mode;
-	rgbc color;
+	sparkle_data sparkle;
+        colorwheel_data colorwheel;
 	uint16_t eq[7];
-        uint16_t changetime;
         uint16_t eq_thres;
 }data;
 
@@ -41,13 +56,13 @@ volatile data config_data;
 IntervalTimer lcdUpdateTimer;
 
 //Global variables for LEDs
-const int ledsPerStrip = 16;
-const int ledsInStrips[5] = {20,20,24,24,16};
+const int ledsPerStrip = LONGEST_STRIP;
+const int ledsInStrips[5] = {23,23,21,21,16};
 DMAMEM int displayMemory[ledsPerStrip*6];
-int drawingMemory[ledsPerStrip*6];
+int drawingMemory[LONGEST_STRIP*6];
 const int config = WS2811_GRB | WS2811_800kHz;
 
 //Instansiate classes
 NRF24 nrf24(PIN_NRF_CS,PIN_NRF_CSE);
-OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config);
+OctoWS2811 leds(LONGEST_STRIP, displayMemory, drawingMemory, config);
 

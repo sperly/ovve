@@ -32,10 +32,16 @@ void selModeColorWheel(MenuItem* p_menu_item){
   MenuExc = true;
   MenuFwd = false;
   lastAction = 0;
+  SendMode(0);
 }
 void selModeSparkle(MenuItem* p_menu_item){
+  lcd.setCursor(0, 2);
+  lcd.print("1 - Sparkle");
+  config_data.mode = 1;
   MenuExc = true;
   MenuFwd = false;
+  lastAction = 0;
+  SendMode(1);
 }
 void selModeBassTrigger(MenuItem* p_menu_item){
   MenuExc = true;
@@ -127,7 +133,7 @@ void setup() {
     Serial.println("setThisAddress failed");
   }
   delay(100);
-  if (nrf24.setPayloadSize(3n*sizeof(uint8_t)))
+  if (nrf24.setPayloadSize(NRF_PACKET_SIZE*sizeof(uint8_t)))
   {
     lcd.setCursor(0, 2);
     lcd.print("payload: ");
@@ -169,9 +175,11 @@ void setup() {
   //Setup bouncer pins
   pinMode(PIN_SCAN_BUTTON,INPUT);
   pinMode(PIN_ENC_BUTTON,INPUT);
+  
   Enc.write(0);
   encPos = 0;
   LCDOn();
+  //lcd.setBacklight(128, true);
 }
 
 void readConfig(){
@@ -266,16 +274,20 @@ void loop() {
   {
     butPressed = true;
     LCDOn();
+    ms.select();
   }
   
   if((butBounce.duration() > 2000) && (butPressed == true))
   {
      ActivateMenu();
+     butPressed = false;
+     ms.select();
   }
   
   long newPosition = Enc.read();
-  
+  Serial.println(newPosition);
   if(newPosition != encPos){
+    Serial.println("GG");
     if(newPosition > encPos){
       for(int i = 0; i < (newPosition-encPos); i++){
         ms.next(); 
@@ -306,6 +318,7 @@ void CheckColor()
 {
   if(readingProgress == true) return;
   uint8_t col[3];
+  uint8_t data[8] = {0,0,0,0,0,0,0,0};
   
   boolean scanBounceChanged = scanBounce.update ();
   if(scanBounce.read() && scanBounceChanged)
@@ -331,6 +344,10 @@ void CheckColor()
     lcd.print("B:");
     lcd.setCursor(13, 2);
     lcd.print(col[2], HEX);
+    
+    data[1] = col[0];
+    data[2] = col[1];
+    data[3] = col[2];
 
     if (!nrf24.setTransmitAddress((uint8_t*)"serv1", 5))
       Serial.println("setTransmitAddress failed");
@@ -342,6 +359,10 @@ void CheckColor()
     readingProgress = false;
     lastAction = 0;
   }
+}
+
+void SendMode(uint8_t mode){
+   
 }
 
 void GetColor(uint8_t* color)
