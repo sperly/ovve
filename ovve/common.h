@@ -1,6 +1,7 @@
 //Defines
 #define STRIPS              5
 #define LONGEST_STRIP       23
+#define EQ_BANDS			7
 #define PIN_EQ_STROBE       23
 #define PIN_EQ_RESET        22
 #define PIN_EQ_SIGNAL       A7
@@ -9,6 +10,10 @@
 
 #define NRF_PACKET_SIZE     8
 
+#define NRF_ENABLED
+//#define EQ_ENABLED
+//#define IMU_ENABLED
+
 typedef struct {
 	uint8_t red;
 	uint8_t green;
@@ -16,18 +21,8 @@ typedef struct {
 	uint8_t clear;
 }rgbc;
 
-typedef struct {
-	uint16_t b1;
-	uint16_t b2;
-	uint16_t b3;
-	uint16_t b4;
-	uint16_t b5;
-	uint16_t b6;
-	uint16_t b7;
-} eq_data;
-
 typedef struct{
-  uint32_t change_rate;
+  uint16_t change_rate;
   uint8_t step_size;
   uint8_t intensity;
 }colorwheel_data;
@@ -35,29 +30,33 @@ typedef struct{
 typedef struct {
   uint8_t intensity;
   rgbc color;
-  uint32_t rate;
-  uint32_t change_rate;
+  uint16_t rate;
+  uint16_t change_rate;
 }sparkle_data;
 
 typedef struct {
+		boolean leds;
         rgbc single_color;
         rgbc chamelion_color;
-	uint8_t mode;
-	sparkle_data sparkle;
+		uint8_t mode;
+		uint8_t default_mode;
+		sparkle_data sparkle;
         colorwheel_data colorwheel;
-	uint16_t eq[7];
+		uint16_t eq[EQ_BANDS];
         uint16_t eq_thres;
 }data;
 
 //Global variables for EQ
-int audio_data[7]; // store band values in these arrays
+int audio_data[EQ_BANDS]; // store band values in these arrays
 volatile data config_data;
+uint8_t current_mode;
 
 IntervalTimer lcdUpdateTimer;
 
 //Global variables for LEDs
 const int ledsPerStrip = LONGEST_STRIP;
-const int ledsInStrips[5] = {23,23,21,21,16};
+const int ledsInStrips[STRIPS] = {23,23,21,21,16,1};
+//Strips start @ 23,46,69,
 DMAMEM int displayMemory[ledsPerStrip*6];
 int drawingMemory[LONGEST_STRIP*6];
 const int config = WS2811_GRB | WS2811_800kHz;

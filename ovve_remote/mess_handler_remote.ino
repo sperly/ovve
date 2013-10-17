@@ -39,7 +39,7 @@ uint32_t bytes2uword(uint8_t byte0, uint8_t byte1){
   return retval;
 }
 
-void HandleMess(byte* data, int data_len){
+void Mess(byte* data, int data_len){
   uint16_t messID = 0;
   uint16_t time = 0;
   if(data[0] & MESS_TYPE_MASK == MESS_TYPE_SET){
@@ -155,4 +155,17 @@ void HandleMess(byte* data, int data_len){
   }
 }
 
+void SendMess(char* Host, byte* data, uint16_t len) {
+  if (!nrf24.setTransmitAddress((uint8_t*)"serv1", 5))
+    Serial.println("setTransmitAddress failed");
+  if (!nrf24.send((uint8_t*)&col, (3*sizeof(uint8_t))))
+    Serial.println("send failed");  
+  if (!nrf24.waitPacketSent())
+    Serial.println("waitPacketSent failed"); 
+  Serial.println("Color Sent");
+#ifdef NRF_LOW_POWER
+  nrf24.powerDown();
+  Serial.println("NRF power down");
+#endif
+}
 

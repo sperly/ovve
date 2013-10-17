@@ -17,6 +17,7 @@ void setup() {
   leds.begin();
   Serial.println("LED: Initialised!");
   
+#ifdef EQ_ENABLED
   //Set up EQ pins
   Serial.print("EQ: Init... ");
   pinMode(PIN_EQ_RESET, OUTPUT); // reset
@@ -24,7 +25,9 @@ void setup() {
   digitalWrite(PIN_EQ_RESET,LOW); // reset low
   digitalWrite(PIN_EQ_STROBE,HIGH); //pin 5 is RESET on the shield
   Serial.print("EQ: Initialised!");
+#endif
 
+#ifdef NRF_ENABLED
   //Set up wireless
   Serial.println("NRF24: Init...");
   if (!nrf24.init())
@@ -38,6 +41,8 @@ void setup() {
   if (!nrf24.setRF(NRF24::NRF24DataRate2Mbps, NRF24::NRF24TransmitPower0dBm))
     Serial.println("NRF24: setRF failed");    
   Serial.println("NRF24: Initialised!");
+#endif
+  Serial.println("All systems GO!");
 }
 
 void readConfig(){
@@ -96,13 +101,10 @@ void UpdateLEDS()
 }
 
 void loop() {
-  uint8_t r8, g8, b8;
+  uint8_t r, g, b;
   uint8_t data[128];
   
-  //data[0] = 0x00;
-  //data[1] = 0x00;
-  //data[2] = 0xFF;
-  
+#ifdef EQ_ENABLED
   /*Serial.println("EQ: Reading...");
   readMSGEQ7(audio_data);
   for(int i=0;i<7;i++)
@@ -114,16 +116,23 @@ void loop() {
     Serial.print(";"); 
   }
   Serial.println("");*/
-  
+#endif
+
+#ifdef NRF_ENABLED
   Serial.println("NRF: ");
   if(nrf24.available()){
-    // ping_client sends us an unsigned long containing its timestamp
-    
     uint8_t len = sizeof(data);
     if (!nrf24.recv((uint8_t*)&data, &len))
       Serial.println("read failed");
     else 
     {
+	  Serial.print("Bytes recieved: ");
+	  Serial.print("len);
+	  for(int i = 0; i < len; i++){
+		Serial.print(data[i], HEX);
+		Serail.print(" ");
+	  }
+	  Serial.println("");
       HandleMess(data, len);
       //Serial.print(data[0], HEX);
       //Serial.print(data[1], HEX);
@@ -138,44 +147,28 @@ void loop() {
       //leds.show();
     }
   }
-  for(int i = 0; i< 185;i++)
-      {
-        leds.setPixel(i, 128, 66,12);
-      }
-  leds.show();
-  //nrf24.waitAvailable();
-  // ping_client sends us an unsigned long containing its timestamp
-  //uint8_t data[3];
-  //uint8_t len = sizeof(data);
-  //if (!nrf24.recv((uint8_t*)&data, &len))
-  //  Serial.println("read failed");
-  //else 
-  //{
-  //  Serial.print(data[0], HEX);
-  //  Serial.print(data[1], HEX);
-  //  Serial.print(data[2], HEX);
   
-//  r8 = (uint8_t)(red/256);
-//  g8 = (uint8_t)(green/256);
-//  b8 = (uint8_t)(blue/256);
- /*int i = 0;  
-  //Serial.print((int)r8, HEX); Serial.print((int)g8, HEX); Serial.print((int)b8, HEX);
-  Serial.println(" ");
-  for(i = 0; i< 120;i++)
-  {
-      leds.setPixel(i, data[0], data[1],data[2]);
+  switch(mode){
+    //Single color mode
+	case 0:
+	  for(int j = 0; j< 185;j++)
+	  {
+		leds.setPixel(j, config_data.single_color.red, config_data.single_color.green, config_data.single_color.blue);
+	  }
+	case 1:  
+	  
+	  
+#else
+  for(int i = 0; i < 360; i++){
+	for(int j = 0; j< 185;j++)
+    {
+      leds.setPixel(j, i, 100, 100);
+    }
+	delay(10);
   }
-  leds.show();*/
+#endif
+  UpdateLEDS();
 }
-
-//void colorWipe(int color, int wait)
-//{
-//  for (int i=0; i < leds.numPixels(); i++) {
-//    leds.setPixel(i, color);
-//    leds.show();
-//    delayMicroseconds(wait);
-//  }
-//}
 
 // Function to read 7 band equalizers
 void readMSGEQ7(int *audio_data)
