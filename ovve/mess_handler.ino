@@ -56,9 +56,9 @@ void HandleMess(byte* data, int data_len){
         Serial.print(data[2], HEX);
         Serial.print(data[3], HEX);
         Serial.println(data[4], HEX);
-        config_data.color.red = data[2];
-        config_data.color.green = data[3];
-        config_data.color.blue = data[4];
+        config_data.single_color.red = data[2];
+        config_data.single_color.green = data[3];
+        config_data.single_color.blue = data[4];
         break;
       case MESS_SET_CW_RATE:
         time = bytes2udword(data[2], data[3], data[4], data[5]);
@@ -76,7 +76,7 @@ void HandleMess(byte* data, int data_len){
         Serial.println(data[2], DEC);
         config_data.colorwheel.intensity = data[2];
         break;
-      case MESS_SET_SPARKLE_CW_INT:
+      case MESS_SET_SPARK_CW_INT:
         Serial.print("Setting sparkle colorwheel color intensity to: ");
         Serial.println(data[2], DEC);
         config_data.colorwheel.intensity = data[2];

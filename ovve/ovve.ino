@@ -44,11 +44,11 @@ void readConfig(){
   int address = 0;
   Serial.println("Reading EEPOROM config");
   config_data.mode = (uint8_t)EEPROM.read(address++);
-  config_data.changetime = ((uint8_t)EEPROM.read(address++)) << 8;
-  config_data.changetime |= (uint8_t)EEPROM.read(address++);
-  config_data.color.red = (uint8_t)EEPROM.read(address++);
-  config_data.color.green = (uint8_t)EEPROM.read(address++);
-  config_data.color.blue = (uint8_t)EEPROM.read(address++);
+  config_data.colorwheel.change_rate = ((uint8_t)EEPROM.read(address++)) << 8;
+  config_data.colorwheel.change_rate |= (uint8_t)EEPROM.read(address++);
+  config_data.single_color.red = (uint8_t)EEPROM.read(address++);
+  config_data.single_color.green = (uint8_t)EEPROM.read(address++);
+  config_data.single_color.blue = (uint8_t)EEPROM.read(address++);
   config_data.eq_thres = ((uint8_t)EEPROM.read(address++)) << 8;
   config_data.eq_thres |= (uint8_t)EEPROM.read(address++);
 }
@@ -57,11 +57,11 @@ void writeConfig(){
   int address = 0;
   Serial.println("Writing EEPOROM config");
   EEPROM.write(address++, (byte)config_data.mode); 
-  EEPROM.write(address++, (byte)(config_data.changetime >> 8)); 
-  EEPROM.write(address++, (byte)(config_data.changetime & 0xFF)); 
-  EEPROM.write(address++, (byte)config_data.color.red); 
-  EEPROM.write(address++, (byte)config_data.color.green); 
-  EEPROM.write(address++, (byte)config_data.color.blue);
+  EEPROM.write(address++, (byte)(config_data.colorwheel.change_rate >> 8)); 
+  EEPROM.write(address++, (byte)(config_data.colorwheel.change_rate & 0xFF)); 
+  EEPROM.write(address++, (byte)config_data.single_color.red); 
+  EEPROM.write(address++, (byte)config_data.single_color.green); 
+  EEPROM.write(address++, (byte)config_data.single_color.blue);
   EEPROM.write(address++, (byte)(config_data.eq_thres >> 8)); 
   EEPROM.write(address++, (byte)(config_data.eq_thres & 0xFF));
 }
@@ -69,9 +69,9 @@ void writeConfig(){
 void defaultConfig()
 {
   config_data.mode = 0;
-  config_data.ingle_color.red = 0xAA;
-  config_data.color.green = 0xAA;
-  config_data.color.blue = 0xAA;
+  config_data.single_color.red = 0xAA;
+  config_data.single_color.green = 0xAA;
+  config_data.single_color.blue = 0xAA;
   config_data.eq_thres = 550;
   
   config_data.sparkle.intensity = 0xFF;
@@ -138,6 +138,10 @@ void loop() {
       //leds.show();
     }
   }
+  for(int i = 0; i< 185;i++)
+      {
+        leds.setPixel(i, 128, 66,12);
+      }
   leds.show();
   //nrf24.waitAvailable();
   // ping_client sends us an unsigned long containing its timestamp
