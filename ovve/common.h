@@ -57,6 +57,8 @@
 #define MODE_SPARKLE_SINGLE_COLOR        7
 #define MODE_SPARKLE_RANDOM              8
 #define MODE_PULSE_SINGLE_COLOR          9
+#define MODE_RAIN_SINLE_COLOR            10
+#define MODE_RAIN_COLORWHEEL             11
  
  //Defines
 #define STRIPS                           5
@@ -69,7 +71,7 @@
 #define PIN_NRF_CS                       9
 #define PIN_NRF_CSE                      10
 #define PIN_BUTTON                       22
-#define PIN_PULSE			 A3 //17
+#define PIN_PULSE			 A4 //17
 
 #define NRF_PACKET_SIZE                  8
 #define NRF_DEFAULT_CHANNEL              2
@@ -83,7 +85,7 @@
 #define NRF_ENABLED
 //#define EQ_ENABLED
 //#define IMU_ENABLED
-#define PULSE_ENABLED
+//#define PULSE_ENABLED
 
 typedef struct {
   uint8_t red;
@@ -108,9 +110,9 @@ typedef struct {
 }sparkle_data;
 
 typedef struct {
-	uint8_t intensity;
-	uint8_t decay_time;
-	rgbc color;
+  uint8_t intensity;
+  uint8_t decay_time;
+  rgbc color;
 }pulse_data;
 
 typedef struct {
@@ -123,12 +125,12 @@ typedef struct {
   colorwheel_data colorwheel;
   uint16_t eq[EQ_BANDS];
   uint16_t eq_thres;
-	pulse_data pulse;
+  pulse_data pulse;
 }data;
 
 typedef struct {
   uint32_t ledColor;
-	uint8_t  ledHue;
+  uint8_t  ledHue;
   uint8_t  ledIntensity;
 }led_data;
 
@@ -150,9 +152,10 @@ volatile data config_data;
 uint8_t current_mode;
 led_data ledData[LONGEST_STRIP*STRIPS];
 elapsedMillis loop_time1, loop_time2, loop_time3;
-uint8_t last_color_step = 0;
+uint16_t last_color_step = 0;
 uint8_t last_mode = 99;
-uint8_t lastPulse = 0;
+uint16_t lastPulse = 0;
+HsvColor hsvColors;
 
 IntervalTimer lcdUpdateTimer;
 
