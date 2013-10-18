@@ -1,31 +1,15 @@
-#define MESS_TYPE_MASK                   0xF0
-#define MESS_TYPE_SET                    0x90
-#define MESS_TYPE_GET                    0xA0
-#define MESS_TYPE_RESP_GET               0x40
-#define MESS_TYPE_RESP_SET               0x20
-
-#define MESS_VAL_TYPE_UINT8              0x01
-#define MESS_VAL_TYPE_UINT16             0x02
-#define MESS_VAL_TYPE_FLOAT              0x04
-#define MESS_VAL_TYPE_CHAR               0x08
-#define MESS_VAL_TYPE_UINT32             0x10
-#define MESS_VAL_TYPE_LONG               0x20
-#define MESS_VAL_TYPE_INT8               0x40
-
-#define MESS_SET_LEDS                    0x001
-#define MESS_SET_MODE                    0x002
-#define MESS_SET_DEFAULT_MODE            0x003
-#define MESS_SET_COL_IN_SINGLE           0x101
-#define MESS_SET_CW_RATE                 0x201
-#define MESS_SET_CW_STEPSIZE             0x202
-#define MESS_SET_CW_INT                  0x203
-#define MESS_SET_SPARK_CW_INT            0x601
-#define MESS_SET_SPARK_CW_RATE           0x602
-#define MESS_SET_SPARK_CW_COL_RATE       0x603
-#define MESS_SET_SPARK_CW_STEPSIZE       0x604
-#define MESS_SET_SPARK_SINGLE_INT        0x701
-#define MESS_SET_SPARK_SINGLE_COLOR      0x702
-#define MESS_SET_SPARK_SINGLE_RATE       0x703
+/*  Copyright (c) 2013 Eric Lind  
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ */
 
 uint32_t bytes2udword(uint8_t byte0, uint8_t byte1, uint8_t byte2, uint8_t byte3){
   uint32_t retval = 0;
@@ -70,7 +54,7 @@ void HandleMess(uint8_t* data, int data_len){
         break;
 	  //0x004
 	  case MESS_SET_DEFAULT_MODE:
-        Serial.print("Setting mode to: ");
+        Serial.print("Setting default mode to: ");
         Serial.println(data[2]);
         config_data.default_mode = data[2];
         break;
