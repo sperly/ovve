@@ -29,7 +29,7 @@ void tcsInit(){
 void lcdInit(){
   //Start 3-line, normal contrast, 3.3v
   if(lcd.begin(DOG_LCD_M163, config_data.lcdContrast, DOG_LCD_VCC_3V3) == 0){
-	Serial.println("Found LCD");
+    Serial.println("Found LCD");
   }
   LCDOn();
   
@@ -48,26 +48,28 @@ void lcdInit(){
 
 void setup() {
   Serial.begin(9600);
-
+  delay(5000);
+  defaultConfig();
+  //writeConfig();
   //Read configuration from eeprom
-  readConfig();  
-
+  //readConfig();  
+  
   //Initialize LCD first
   lcdInit();
   
-#ifdef TCS_ENABLED
+  #ifdef TCS_ENABLED
   //If TCS is installed, initialize it
   tcsInit();
-#endif
+  #endif
   
   
-#ifdef NRF_ENABLED
+  #ifdef NRF_ENABLED
   //If NRF is installed, initialize it.
   nrfInit();
-#endif
-
+  #endif
+  
   //Initialize menus
-  MenuInit();
+  menuInit();
   
   Serial.println("Initialised");
   
@@ -77,7 +79,7 @@ void setup() {
     x /= 255;
     x = pow(x, 2.5);
     x *= 255;
-      
+    
     gammatable[i] = (uint8_t)x;      
   }
   
@@ -130,8 +132,8 @@ void writeConfig(){
   EEPROM.write(address++, (byte)config_data.sparkle.color.blue); 
   EEPROM.write(address++, (byte)(config_data.sparkle.rate >> 8)); 
   EEPROM.write(address++, (byte)(config_data.sparkle.rate & 0xFF));
-  EEPROM.write(address++, (byte)(config_data.change_rate >> 8)); 
-  EEPROM.write(address++, (byte)(config_data.change_rate & 0xFF));
+  EEPROM.write(address++, (byte)(config_data.sparkle.change_rate >> 8)); 
+  EEPROM.write(address++, (byte)(config_data.sparkle.change_rate & 0xFF));
   EEPROM.write(address++, (byte)config_data.colorwheel.intensity);
   EEPROM.write(address++, (byte)(config_data.colorwheel.change_rate >> 8)); 
   EEPROM.write(address++, (byte)(config_data.colorwheel.change_rate & 0xFF));
@@ -142,13 +144,12 @@ void writeConfig(){
   EEPROM.write(address++, (byte)config_data.lcdContrast);
 }
 
-void defaultConfig()
-{
+void defaultConfig(){
   config_data.mode = 0;
+  
   config_data.single_color.red = 0xAA;
   config_data.single_color.green = 0xAA;
   config_data.single_color.blue = 0xAA;
-  config_data.eq_thres = 550;
   
   config_data.sparkle.intensity = 0xFF;
   config_data.sparkle.color.red = 0xFF;
@@ -160,22 +161,20 @@ void defaultConfig()
   config_data.colorwheel.change_rate = 100;
   config_data.colorwheel.step_size = 1;
   config_data.colorwheel.intensity = 0xFF;
-
-  config_data.lcdBacklight 0xE0;
-  config_data.lcdBacklightTime = 3000)); 
-  config_data.lcdContrast = 0x28
+  
+  config_data.lcdBacklight = 0xE0;
+  config_data.lcdBacklightTime = 3000 ; 
+  config_data.lcdContrast = 0x28;
 }
 
-void LCDOn()
-{
+void LCDOn(){
   lcdLight = true;
   lcd.setBacklight(config_data.lcdBacklight, true);
   ClearLCD();
   lastAction = 0;
 }
 
-void LCDOff()
-{
+void LCDOff(){
   lcdLight = false;
   lcd.setBacklight(0, true); 
 }
@@ -192,26 +191,23 @@ void loop() {
   if(lastAction > config_data.lcdBacklightTime && lcdLight == true){
     ClearLCD();
     LCDOff();
-    
   }
-
-  boolean butBounceChanged = butBounce.update();
-  if(butBounce.read() && butBounceChanged) 
-  {
+  
+  /*boolean butBounceChanged = butBounce.update();
+  if(butBounce.read() && butBounceChanged) {
     butPressed = true;
     LCDOn();
     ms.select();
   }
   
-  if((butBounce.duration() > 2000) && (butPressed == true))
-  {
-     ActivateMenu();
-     butPressed = false;
-     ms.select();
+  if((butBounce.duration() > LONG_PRESS) && (butPressed == true)){
+    ActivateMenu();
+    butPressed = false;
+    ms.select();
   }
   
-  long newPosition = Enc.read();
-  Serial.println(newPosition);
+  long newPosition = enc.read();
+  //Serial.println(newPosition);
   if(newPosition != encPos){
     Serial.println("GG");
     if(newPosition > encPos){
@@ -226,7 +222,7 @@ void loop() {
     }
     lcd.setCursor(0, 1);
     lcd.print(ms.get_current_menu()->get_selected()->get_name());
-  }
+  }*/
   CheckColor();
 }
 
@@ -240,15 +236,13 @@ void ActivateMenu() {
 
 boolean readingProgress = false;
 
-void CheckColor()
-{
+void CheckColor(){
   if(readingProgress == true) return;
-  uint8_t col[3];
-  uint8_t data[8] = {0,0,0,0,0,0,0,0};
+  uint8_t col[8] = {0,0,0,0,0,0,0,0};
+  //uint8_t data[8] = {0,0,0,0,0,0,0,0};
   
   boolean scanBounceChanged = scanBounce.update ();
-  if(scanBounce.read() && scanBounceChanged)
-  {
+  if(scanBounce.read() && scanBounceChanged){
     readingProgress = true;
     Serial.println("Checking color!");
     LCDOn();
@@ -270,13 +264,13 @@ void CheckColor()
     lcd.print("B:");
     lcd.setCursor(13, 2);
     lcd.print(col[2], HEX);
-	
-	delay(INIT_DELAY);
     
-    data[1] = col[0];
-    data[2] = col[1];
-    data[3] = col[2];
-
+    delay(INIT_DELAY);
+    
+    //data[1] = col[0];
+    //data[2] = col[1];
+    //data[3] = col[2];
+    
     //if (!nrf24.setTransmitAddress((uint8_t*)"serv1", 5))
     //  Serial.println("setTransmitAddress failed");
     //if (!nrf24.send((uint8_t*)&col, (3*sizeof(uint8_t))))
@@ -284,27 +278,24 @@ void CheckColor()
     // if (!nrf24.waitPacketSent())
     //    Serial.println("waitPacketSent failed"); 
     // Serial.println("Color Sent");
-    
-	if(!sendData(col, sizeof(col))){
-	  ClearLCD();
-	  lcd.setCursor(0, 1);
-      lcd.print("Error sending");
-	  lcd.setCursor(0, 2);
-	  lcd.print("color data!");
-	}
-	readingProgress = false;
-    lastAction = 0;
+    uint8_t buffer[8];// = {0,0,0,0,0,0,0,0};
+    genPacket(0x101, col, 3, buffer);//MESS_SET_COL_IN_SINGLE, data, 3, buffer
+      if(!sendData(buffer, sizeof(buffer))){
+        ClearLCD();
+        lcd.setCursor(0, 1);
+        lcd.print("Error sending");
+        lcd.setCursor(0, 2);
+        lcd.print("color data!");
+        Serial.println("Failed to send data");
+      }
+      readingProgress = false;
+      lastAction = 0;
   }
 }
 
-void SendMode(uint8_t mode){
-   
-}
-
-void GetColor(uint8_t* color)
-{
+void GetColor(uint8_t* color){
   uint16_t clear, red, green, blue;
-
+  
   tcs.setInterrupt(false);      // turn on LED
   delay(100);  // takes 50ms to read 
   tcs.getRawData(&red, &green, &blue, &clear);
@@ -317,11 +308,13 @@ void GetColor(uint8_t* color)
   r = red/84.1; 
   g = green/84.1;
   b = blue/84.1;
-
+  
   Serial.print("\t");
   Serial.print((int)r, HEX); Serial.print((int)g, HEX); Serial.print((int)b, HEX);
   Serial.println();
   
-  color[0] = gammatable[(uint8_t)r]; color[1] = gammatable[(uint8_t)g]; color[2] = gammatable[(uint8_t)b];
+  color[0] = gammatable[(uint8_t)r]; 
+  color[1] = gammatable[(uint8_t)g]; 
+  color[2] = gammatable[(uint8_t)b];
 }
 

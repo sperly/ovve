@@ -1,5 +1,5 @@
 //Defines
-#define STRIPS              5
+#define STRIPS              6
 #define LONGEST_STRIP       23
 #define EQ_BANDS			7
 #define PIN_EQ_STROBE       23
@@ -9,6 +9,9 @@
 #define PIN_NRF_CSE         10
 
 #define NRF_PACKET_SIZE     8
+#define NRF_DEFAULT_CHANNEL 2
+#define NRF_SERVER_ID       "serv1"
+#define NRF_REMOTE_ID       "clie1"
 
 #define NRF_ENABLED
 //#define EQ_ENABLED
@@ -32,18 +35,19 @@ typedef struct {
   rgbc color;
   uint16_t rate;
   uint16_t change_rate;
+  uint8_t step_size;
 }sparkle_data;
 
 typedef struct {
-		boolean leds;
-        rgbc single_color;
-        rgbc chamelion_color;
-		uint8_t mode;
-		uint8_t default_mode;
-		sparkle_data sparkle;
-        colorwheel_data colorwheel;
-		uint16_t eq[EQ_BANDS];
-        uint16_t eq_thres;
+  boolean leds;
+  rgbc single_color;
+  rgbc chamelion_color;
+  uint8_t mode;
+  uint8_t default_mode;
+  sparkle_data sparkle;
+  colorwheel_data colorwheel;
+  uint16_t eq[EQ_BANDS];
+  uint16_t eq_thres;
 }data;
 
 //Global variables for EQ

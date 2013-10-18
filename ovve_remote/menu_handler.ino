@@ -17,7 +17,7 @@ void selModeColorWheel(MenuItem* p_menu_item){
   MenuExc = true;
   MenuFwd = false;
   lastAction = 0;
-  SendMode(0);
+  //SendMode(0);
 }
 
 void selModeSparkle(MenuItem* p_menu_item){
@@ -27,7 +27,7 @@ void selModeSparkle(MenuItem* p_menu_item){
   MenuExc = true;
   MenuFwd = false;
   lastAction = 0;
-  SendMode(1);
+  //SendMode(1);
 }
 
 void selModeBassTrigger(MenuItem* p_menu_item){

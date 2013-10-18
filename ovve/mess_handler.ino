@@ -39,13 +39,21 @@ uint32_t bytes2uword(uint8_t byte0, uint8_t byte1){
   return retval;
 }
 
-void HandleMess(byte* data, int data_len){
+void HandleMess(uint8_t* data, int data_len){
+  Serial.println("Handeling...");
+  Serial.println(data[0],HEX);
+  Serial.println(MESS_TYPE_MASK,HEX);
+  Serial.println(MESS_TYPE_SET);
   uint16_t messID = 0;
   uint16_t time = 0;
-  if(data[0] & MESS_TYPE_MASK == MESS_TYPE_SET){
+  if((data[0] & MESS_TYPE_MASK) == MESS_TYPE_SET) {
     //Set values
-    messID = data[1];
-    messID |= (data[0] & !MESS_TYPE_MASK) << 8;
+    messID = data[1] | ((data[0] & (~MESS_TYPE_MASK)) << 8);
+    //messID = (data[0] & (!MESS_TYPE_MASK)) << 8;
+    
+    Serial.print("MessID: 0x");
+    Serial.print(messID,HEX);
+    Serial.println("");
     
     switch(messID){
 	  // 0x001
@@ -106,14 +114,14 @@ void HandleMess(byte* data, int data_len){
 	    time = bytes2uword(data[2], data[3]);
         Serial.print("Setting sparkle colorwheel sparkle rate to: ");
         Serial.println(time, DEC);
-        config_data.sparkle.rate = time];
+        config_data.sparkle.rate = time;
         break;
 	  //0x603
 	  case MESS_SET_SPARK_CW_COL_RATE:
 	    time = bytes2uword(data[2], data[3]);
         Serial.print("Setting sparkle colorwheel change rate to: ");
         Serial.println(time, DEC);
-        config_data.sparkle.change_rate = time];
+        config_data.sparkle.change_rate = time;
         break;
 	  //0x604
 	  case MESS_SET_SPARK_CW_STEPSIZE:
@@ -138,13 +146,14 @@ void HandleMess(byte* data, int data_len){
         config_data.sparkle.intensity = data[2];
         break;
 	  //0x703
-	  case MESS_SET_SPARK_CW_RATE:
+	  case MESS_SET_SPARK_SINGLE_RATE:
 	    time = bytes2uword(data[2], data[3]);
         Serial.print("Setting sparkle rate to: ");
         Serial.println(time, DEC);
-        config_data.sparkle.rate = time];
+        config_data.sparkle.rate = time;
         break;
       default:
+        Serial.println("Garbage message");
         break;
     }
   }
